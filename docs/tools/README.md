@@ -6,7 +6,7 @@ This section owns named implementations, supported cache units, integration limi
 | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [sccache vs Mr. Boxington vs Kache](compiler-caches.md)             | Direct compiler-tool comparison with source versions and measured/untested boundaries.               |
 | [sccache](sccache.md)                                               | Compiler-output engine; this archive's substantial measurements concern direct S3 in GitHub Actions. |
-| [Mr. Boxington](mr-boxington.md)                                    | Compilation/build-action engine; experimental here, with older same-job and fresh-runner trials.     |
+| [Mr. Boxington](mr-boxington.md)                                    | Compilation/build-action engine; experimental here, with current target/object and historical trials. |
 | [Kache](kache.md)                                                   | Local-first compiler cache with remote sharing; explicitly untested here.                            |
 | [cargo-chef](cargo-chef.md)                                         | Dependency-recipe tool for Docker layers; source-backed, untested here.                              |
 | [Swatinem/rust-cache semantics](../concepts/rust-cache-behavior.md) | Rust-aware archive action; its input/cleanup contract has one existing owner.                        |
