@@ -90,6 +90,12 @@ As checked on August 20, 2026, `Swatinem/rust-cache@v2` resolves to release v2.9
 The change makes the existing one-week age sweep inspect every immediate directory entry after a partial restore instead of stopping after the first entry. It does not add a byte limit, generation-aware deduplication, LRU policy, fingerprint validation, or recursive pruning of every nested Cargo artifact generation.
 
 The observed 206 MB to 13.89 GB growth happened in less than one week, so even the corrected age sweep would not have bounded this incident.
+
+## Applicability To Mr. Boxington Target Mode
+
+The measured 17.82 GB lineage used `Swatinem/rust-cache`; it is not a direct measurement of Mr. Boxington target mode. The current `jdx/mr-boxington-action` target cleanup is nevertheless relevant to the same risk assessment. It removes final products and package entries absent from current Cargo metadata, but retains every hash variant whose name matches a package or target still present in the graph. It has no byte cap, generation-aware deduplication, or age sweep.
+
+That implementation is an improvement over saving an untouched target tree, but it does not establish bounded size under repeated source, feature, profile, build-script, or dependency changes. A restored target can accumulate new hash variants and be saved into the next immutable cache entry. Treat recurrence of the production failure as a plausible inference until a multi-generation changed-source soak test measures archive size, file count, restore time, and save time. Do not transfer the exact 17.82 GB outcome to MBX as if it had already been observed there.
 ## Interpretation
 
 - Whole-target caching was beneficial while its archive was compact and consistent.
@@ -112,3 +118,4 @@ The observed 206 MB to 13.89 GB growth happened in less than one week, so even t
 - Do not add a broad target `restore-keys` fallback that can copy an older mutable target tree into each new immutable object.
 - Restrict target-cache writes to one trusted canonical job so concurrent savers do not repeat the most expensive work.
 - Use [Clean Target: No Cache Or Cargo Inputs Only](../approaches/clean-target.md) as the containment baseline, then compare strategies with [Cache Strategy Benchmarks](cache-strategy-benchmarks.md).
+- Apply the same qualification to other target-archive actions, including MBX target mode, unless their pruning is demonstrated to bound historical variants under the actual workload.

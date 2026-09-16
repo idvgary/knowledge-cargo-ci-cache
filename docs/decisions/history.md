@@ -14,6 +14,13 @@ When a decision in [`docs/decisions/README.md`](README.md) changes, append an en
 
 ## Entries
 
+### D9 — Target growth qualification and MBX remote backends
+
+- Changed: 2026-09-16
+- Prior conclusion: Treat MBX target mode separately because it restored pruned Cargo target state and produced the fastest immediate exact-warm result.
+- New conclusion: Keep object mode as the qualified portable MBX canary. Target mode is a narrow, unqualified option for stable workloads until multi-generation changed-source testing demonstrates bounded archive size. Keep native S3 and the existing cache server as separate backend candidates; direct S3 was slower than action object transport in one controlled workload, and server mode remains untested.
+- Reason: The current target cleanup retains all hash variants matching packages still present in Cargo metadata and has no byte or generation bound. The production whole-target incident reached 17.82 GB, so a one-generation warm result cannot qualify another target archive for high-churn CI. A separate same-batch run measured action objects at 3m01s warm versus 3m06s for native S3, with 626 MB restored by the action versus 3.0 GiB downloaded during native-S3 Clippy. See [Mr. Boxington evidence](../evidence/mr-boxington-vs-sccache.md#action-object-transport-versus-native-s3), [target growth](../evidence/target-archive-growth.md#applicability-to-mr-boxington-target-mode), and [remote-backend research](../research/mr-boxington-remote-backends.md).
+
 ### D7 and D9 — Directory-backed Mr. Boxington object transport
 
 - Changed: 2026-09-16

@@ -65,4 +65,5 @@ Keep raw logs in the private source system and export only the numeric or catego
 - [Sanitized full-workload compiler-cache sample](../evidence/data/compiler-cache-full-workload-sample.jsonl)
 - [Sanitized Mr. Boxington and sccache cross-run sample](../evidence/data/mr-boxington-sccache-cross-run.jsonl)
 - [Sanitized controlled Mr. Boxington action transport sample](../evidence/data/mr-boxington-action-transport.jsonl)
+- [Sanitized Mr. Boxington remote-backend sample](../evidence/data/mr-boxington-remote-backends.jsonl)
 - [Measurement procedure and report tables](../operations/measuring-cache-performance.md)
