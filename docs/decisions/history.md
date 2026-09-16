@@ -14,6 +14,13 @@ When a decision in [`docs/decisions/README.md`](README.md) changes, append an en
 
 ## Entries
 
+### D7 and D9 — Directory-backed Mr. Boxington object transport
+
+- Changed: 2026-09-16
+- Prior conclusion: Treat S3-backed `sccache` as the leading measured portable clean-target choice. The corrected mbx 1.11.1 object trial completed native Cargo work slightly faster, but action 1.3.1's nested tar restore/import left the warm job seven seconds slower overall.
+- New conclusion: Canary mbx object mode with mbx 1.12.0 and action 1.4.0 or newer alongside sccache. In a controlled same-batch comparison, directory-backed object mode finished seven seconds ahead of sccache and fifteen seconds ahead of action 1.3.1. Keep target mode separate because it restores Cargo target state.
+- Reason: Action 1.4.0 adopted the directory-form bundle added in mbx 1.12.0. For the same 773-action, 4,914-object closure, import fell from 5.97 seconds to 0.26 seconds; warm job time fell from 3m16s to 3m01s. See [Mr. Boxington evidence](../evidence/mr-boxington-vs-sccache.md#controlled-action-131-versus-140-comparison) and [object-restore history](../research/mr-boxington-object-restore.md).
+
 ### D9 — Mr. Boxington after corrected current-version retest
 
 - Changed: 2026-09-15

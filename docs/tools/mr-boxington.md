@@ -4,9 +4,9 @@
 
 | Field         | Value                                                                                                                                 |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Status        | Experimental alternative; current target and object modes were retested on fresh runners, while sccache remains the portable clean-target choice. |
+| Status        | Qualified canary candidate; mbx 1.12.0 with action 1.4.0 produced the leading measured portable object-cache result in the controlled workload. |
 | Use when      | Evaluating target-tree reuse or broader compilation/build-action reuse beyond sccache's eligible compiler invocations.                       |
-| Main tradeoff | Target mode is fast but path/layout-sensitive; object mode is portable but currently pays eager archive import and full-closure validation.   |
+| Main tradeoff | Target mode is fastest but path/layout-sensitive; object mode is portable and directory transport removes most measured import overhead.       |
 
 ## Related files
 
@@ -14,7 +14,7 @@
 | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | [Mr. Boxington compared with sccache](../evidence/mr-boxington-vs-sccache.md)                  | Separate same-job and fresh-runner experiments, original versions, timings, and limitations. |
 | [Compiler-cache integration diagnosis](../operations/diagnosing-compiler-cache-integration.md) | Distinguishes action startup, archive restore, path mapping, object reuse, and publication.  |
-| [Object-mode restore opportunities](../research/mr-boxington-object-restore.md)                | Measured bottleneck, local prototype, and unimplemented upstream design options.             |
+| [Object-mode restore history](../research/mr-boxington-object-restore.md)                      | Measured bottleneck, released directory fix, and remaining upstream design options.           |
 | [Ecosystem sources](../reference/vendor-ci-cache-sources.md)                                   | Upstream documentation, action, limits, and vendor claims.                                   |
 
 ## Design
@@ -25,9 +25,9 @@ Treat it as an alternative compiler wrapper. Do not stack it with sccache or ano
 
 ## Version and backend boundary
 
-The latest archived retest used mbx 1.11.1 and the major action reference `jdx/mr-boxington-action@v1`, which resolved to action 1.3.1 on 2026-09-15. The pending action 1.3.2 release contained dependency and release-bookkeeping changes only, so it did not alter the tested runtime behavior. Keep the action on its supported major reference unless a repository's action-pinning policy requires an immutable commit; selecting mbx's `version` input is a separate choice.
+The latest controlled retest used mbx 1.12.0 with action 1.3.1 and action 1.4.0 in the same workflow batch. The major reference `jdx/mr-boxington-action@v1` resolved to action 1.4.0 commit `867fc530` on 2026-09-16. Keep the action on its supported major reference unless a repository's action-pinning policy requires an immutable commit; selecting mbx's `version` input is a separate choice.
 
-The [v1.3.1 action metadata](https://github.com/jdx/mr-boxington-action/blob/v1.3.1/action.yml) defaults to `backend: github` and `github-cache-mode: target`. Target mode caches a pruned Cargo target tree, Cargo registry/git state, and action-managed tooling. It disables mbx target views and object-backed native-link caching for that transport. Object mode exports the selected deduplicated mbx action/object closure to a tar, lets `actions/cache` archive that tar, then imports and validates the restored closure before the build. A clean-target portable-object experiment must explicitly select `github-cache-mode: objects`; otherwise it compares a different mechanism.
+The [v1.4.0 action metadata](https://github.com/jdx/mr-boxington-action/blob/v1.4.0/action.yml) defaults to `backend: github` and `github-cache-mode: target`. Target mode caches a pruned Cargo target tree, Cargo registry/git state, and action-managed tooling. It disables mbx target views and object-backed native-link caching for that transport. With mbx 1.12.0 or newer, object mode exports the selected action/object closure as a directory so `actions/cache` performs the only archive layer; older action versions transported an inner tar. A clean-target portable-object experiment must explicitly select `github-cache-mode: objects`; otherwise it compares a different mechanism.
 
 Local and server backends remain separate experiments. Record the mbx binary version, action revision, payload mode, cache generation, namespace, trust/save policy, target path, and container path mapping in every measurement.
 
@@ -42,8 +42,8 @@ The September 15 review covered the releases between the original 1.3.0 trial an
 - [mbx 1.10.1](https://github.com/jdx/mr-boxington/releases/tag/v1.10.1): predictions retained from every exported command.
 - [action 1.3.0](https://github.com/jdx/mr-boxington-action/releases/tag/v1.3.0): target-tree transport became the default GitHub payload.
 - [action 1.3.1](https://github.com/jdx/mr-boxington-action/releases/tag/v1.3.1): imported objects are preserved on hosted runners.
-
-The pending action 1.3.2 release reviewed on 2026-09-15 contained dependency updates and release bookkeeping, with no runtime source change affecting this comparison.
+- [mbx 1.12.0](https://github.com/jdx/mr-boxington/releases/tag/v1.12.0): directory-form bundles and parallel import/export verification.
+- [action 1.4.0](https://github.com/jdx/mr-boxington-action/releases/tag/v1.4.0): directory-form GitHub cache transport for object mode when mbx is 1.12.0 or newer.
 
 Use normal GitHub Actions `uses:` execution so the action receives its runtime context. Shell-invoking a bundled action is a diagnostic technique and does not establish supported GitHub-cache behavior. An exact `cache-hit` output establishes an archive match, not reusable build results.
 
@@ -59,8 +59,8 @@ Use normal GitHub Actions `uses:` execution so the action receives its runtime c
 
 The same-job experiment showed competitive local reuse. The original fresh-runner Docker experiment on mbx 1.3.0 restored the exact action cache but rejected Cargo registry paths. The [maintainer confirmed the mapping mechanism](https://github.com/jdx/mr-boxington/discussions/258#discussioncomment-18240056), and [PR #259](https://github.com/jdx/mr-boxington/pull/259) added the dedicated registry mapping. The mbx 1.11.1 retest no longer exhibited that failure: object mode produced 771 hits and zero misses across Clippy and nextest.
 
-In the corrected retest, target mode was the fastest measured option at 2m36s warm overall. Object mode completed the native Cargo section four seconds faster than sccache but finished seven seconds slower overall because it restored an approximately 625 MiB outer cache, materialized a 3.0 GiB inner tar, and spent 6.33 seconds importing 4,914 objects and 773 actions. Keep the complete setup and single-run limitation in [the evidence page](../evidence/mr-boxington-vs-sccache.md).
+In the controlled mbx 1.12.0 comparison, action 1.4.0 object mode restored the same 773-action, 4,914-object closure as action 1.3.1 but reduced import from 5.97 seconds to 0.26 seconds. It finished at 3m01s warm overall, fifteen seconds ahead of action 1.3.1 and seven seconds ahead of sccache. Target mode finished at 2m41s under both action versions. Keep the complete setup and single-run limitation in [the evidence page](../evidence/mr-boxington-vs-sccache.md).
 
 ## Decision
 
-Use this as a qualified experimental alternative under decision D9. Keep sccache for portable clean-target object reuse in the measured workflow. Consider target mode separately when restoring Cargo target state fits the checkout, target-path, and container model. Revisit object mode if upstream removes or hides enough eager restore/import work to change representative end-to-end results.
+Use mbx object mode with mbx 1.12.0 and action 1.4.0 or newer as a qualified portable clean-target canary alongside sccache under decision D9. Consider target mode separately when restoring Cargo target state fits the checkout, target-path, and container model. Repeat representative changed-source, concurrency, failure, and trust-boundary tests before broad adoption.
